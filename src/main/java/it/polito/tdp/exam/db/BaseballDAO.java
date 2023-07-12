@@ -8,10 +8,112 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jgrapht.Graph;
+import org.jgrapht.graph.DefaultWeightedEdge;
+
+import it.polito.tdp.exam.model.Arco;
 import it.polito.tdp.exam.model.People;
 import it.polito.tdp.exam.model.Team;
+import it.polito.tdp.exam.model.Year;
 
 public class BaseballDAO {
+	
+
+	
+	public void creaVertici(List<Integer> listaVertici, String squadra) {
+		
+		String sql = "SELECT DISTINCT teams.year "
+				+ "FROM teams "
+				+ "WHERE teams.name = (?)";
+
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setString(1, squadra);
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				listaVertici.add(rs.getInt("year"));
+			}
+
+			conn.close();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Errore connessione al database");
+			throw new RuntimeException("Error Connection Database");
+		}
+		
+	}
+	
+	public void setPesoArchi(Graph<Integer, DefaultWeightedEdge> grafo, String squadra) {
+		
+		String sql = "SELECT a.year AS anno1, b.year AS anno2, ABS(a.salario - b.salario) AS delta "
+				+ "FROM "
+				+ "(SELECT DISTINCT teams.year, SUM(salaries.salary) AS salario "
+				+ "FROM teams, salaries "
+				+ "WHERE teams.name = (?) "
+				+ "AND salaries.teamCode = teams.teamCode "
+				+ "AND teams.year = salaries.year "
+				+ "GROUP BY teams.year) a, "
+				+ "(SELECT DISTINCT teams.year, SUM(salaries.salary) AS salario "
+				+ "FROM teams, salaries "
+				+ "WHERE teams.name = (?) "
+				+ "AND salaries.teamCode = teams.teamCode "
+				+ "AND teams.year = salaries.year "
+				+ "GROUP BY teams.year) b "
+				+ "WHERE a.year > b.year "
+				+ "GROUP BY a.year, b.year";
+
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setString(1, squadra);
+			st.setString(2, squadra);
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				
+				grafo.setEdgeWeight(grafo.getEdge(rs.getInt("anno1"), rs.getInt("anno2")), rs.getInt("delta"));
+				
+			}
+
+			conn.close();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Errore connessione al database");
+			throw new RuntimeException("Error Connection Database");
+		}
+		
+	}
+	
+	public List<String> listaSquadre() {
+		
+		String sql = "SELECT DISTINCT teams.name "
+				+ "FROM teams "
+				+ "ORDER BY teams.name";
+		List<String> result = new ArrayList<String>();
+
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				result.add(rs.getString("name"));
+			}
+
+			conn.close();
+			return result;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Errore connessione al database");
+			throw new RuntimeException("Error Connection Database");
+		}
+		
+	}
 
 	public List<People> readAllPlayers() {
 		String sql = "SELECT * " + "FROM people";

@@ -35,10 +35,10 @@ public class FXMLController {
     private Button btnSimula; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbAnno"
-    private ComboBox<?> cmbAnno; // Value injected by FXMLLoader
+    private ComboBox<Integer> cmbAnno; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbSquadra"
-    private ComboBox<?> cmbSquadra; // Value injected by FXMLLoader
+    private ComboBox<String> cmbSquadra; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtResult"
     private TextArea txtResult; // Value injected by FXMLLoader
@@ -48,12 +48,37 @@ public class FXMLController {
 
     @FXML
     void handleCreaGrafo(ActionEvent event) {
+    	
+    	cmbAnno.getItems().clear();
+    	txtResult.clear();
+    	
+    	String squadra = cmbSquadra.getSelectionModel().getSelectedItem();
+    	 if (squadra == null) {
+    	 txtResult.appendText("Perfavore seleziona una squadra!\n");
+    	 return;
+    	 }
+    	 
+    	 this.model.creaGrafo(squadra);
+    	 
+    	 txtResult.appendText("Grafo creato!\n");
+    	 txtResult.appendText("#VERTICI: " + this.model.numeroVertici() + "\n");
+    	 txtResult.appendText("#ARCHI: " + this.model.numeroArchi() + "\n");
+    	 
+    	 cmbAnno.getItems().addAll(this.model.listaAnni());
 
     }
 
     @FXML
     void handleDettagli(ActionEvent event) {
-
+    	
+    	Integer anno = cmbAnno.getSelectionModel().getSelectedItem();
+    	 if (anno == null) {
+    	 txtResult.appendText("Perfavore seleziona un anno!\n");
+    	 return;
+    	 }
+    	
+    	txtResult.appendText("\nDettagli per l'anno scelto:\n");
+    	txtResult.appendText(this.model.dettagli(anno));
     }
 
     @FXML
@@ -75,6 +100,7 @@ public class FXMLController {
 
     public void setModel(Model model) {
         this.model = model;
+        cmbSquadra.getItems().addAll(this.model.listaSquadre());
     }
 
 }
